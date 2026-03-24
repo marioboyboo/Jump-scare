@@ -3,66 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relaxing Elevator</title>
+    <title>Instant Transition</title>
     <style>
         body {
-            background-color: #f0f0f0;
+            background-color: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
+            overflow: hidden;
             font-family: sans-serif;
+            transition: background-color 0.05s;
         }
+
         #start-btn {
             padding: 20px 40px;
-            font-size: 1.5rem;
+            font-size: 1.1rem;
             cursor: pointer;
             background: #fff;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            transition: 0.3s;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        #start-btn:hover {
-            background: #e0e0e0;
+
+        .shake {
+            animation: shake-heavy 0.1s infinite;
+            background-color: #ff0000 !important;
         }
-        #status {
-            display: none;
-            font-style: italic;
-            color: #666;
+
+        @keyframes shake-heavy {
+            0% { transform: translate(2px, 2px); }
+            25% { transform: translate(-2px, -2px); }
+            50% { transform: translate(-2px, 2px); }
+            75% { transform: translate(2px, -2px); }
+            100% { transform: translate(2px, 2px); }
         }
     </style>
 </head>
 <body>
 
-    <button id="start-btn">Begin Relaxation Session</button>
-    <div id="status">Enjoy the silence...</div>
+    <button id="start-btn">Start Audio Session</button>
 
-    <audio id="elevator-music" src="musica-elevador-short.mp3"></audio>
-    <audio id="pipe-clang" src="metal-pipe-vine-boom.mp3"></audio>
+    <audio id="elevator-music" src="musica-elevador-short.mp3" preload="auto"></audio>
+    <audio id="pipe-clang" src="metal-pipe-vine-boom.mp3" preload="auto"></audio>
 
     <script>
         const startBtn = document.getElementById('start-btn');
-        const statusText = document.getElementById('status');
         const elevator = document.getElementById('elevator-music');
         const pipe = document.getElementById('pipe-clang');
+        const body = document.body;
+        
+        let hasTriggered = false;
 
         startBtn.addEventListener('click', () => {
-            // Hide button, show status
             startBtn.style.display = 'none';
-            statusText.style.display = 'block';
 
-            // 1. Set elevator music to be "really quiet" (0.1 is 10% volume)
-            elevator.volume = 0.1;
+            // Set music to 1% volume - practically a whisper
+            elevator.volume = 0.01; 
             elevator.play();
 
-            // 2. Detect when the elevator music is ending
-            elevator.onended = () => {
-                // 3. Play the pipes at maximum volume
-                pipe.volume = 1.0; 
-                pipe.play();
-                statusText.innerText = "WAKE UP.";
-            };
+            // Monitor the time to kill the gap
+            elevator.addEventListener('timeupdate', () => {
+                // Calculate how much time is left in the song
+                const timeLeft = elevator.duration - elevator.currentTime;
+
+                // Trigger the clang 0.1 seconds BEFORE the music ends
+                if (timeLeft <= 0.1 && !hasTriggered) {
+                    hasTriggered = true;
+                    
+                    // Instant blast
+                    pipe.volume = 1.0;
+                    pipe.play();
+                    
+                    // Visual shock
+                    body.classList.add('shake');
+                    
+                    // Stop the quiet music immediately
+                    elevator.pause();
+                    
+                    setTimeout(() => {
+                        body.classList.remove('shake');
+                        body.style.backgroundColor = "#000";
+                    }, 1200);
+                }
+            });
         });
     </script>
 </body>
